@@ -1,5 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" 'http://www.w3.org/TR/html4/loose.dtd"'>
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Package Manager Design</title><link rel="stylesheet" type="text/css" href="openacs.css"><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OpenACS Core Documentation"><link rel="up" href="kernel-doc.html" title="Chapter 15. Kernel Documentation"><link rel="previous" href="apm-requirements.html" title="Package Manager Requirements"><link rel="next" href="db-api-detailed.html" title="Database Access API"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><a href="http://openacs.org"><img src="/doc/images/alex.jpg" style="border:0" alt="Alex logo"></a><table width="100%" summary="Navigation header" border="0"><tr><td width="20%" align="left"><a accesskey="p" href="apm-requirements.html">Prev</a> </td><th width="60%" align="center">Chapter 15. Kernel Documentation</th><td width="20%" align="right"> <a accesskey="n" href="db-api-detailed.html">Next</a></td></tr></table><hr></div><div class="sect1"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="apm-design"></a>Package Manager Design</h2></div></div></div><div class="authorblurb"><p>By Bryan Quinn</p>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Package Manager Design</title><link rel="stylesheet" type="text/css" href="openacs.css"><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OpenACS Core Documentation"><link rel="up" href="kernel-doc.html" title="Chapter 15. Kernel Documentation"><link rel="previous" href="apm-requirements.html" title="Package Manager Requirements"><link rel="next" href="db-api-detailed.html" title="Database Access API"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><a href="http://openacs.org"><img src="/doc/images/alex.jpg" style="border:0" alt="Alex logo"></a><table width="100%" summary="Navigation header" border="0"><tr><td width="20%" align="left"><a accesskey="p" href="apm-requirements.html">Prev</a> </td><th width="60%" align="center">Chapter 15. Kernel Documentation</th><td width="20%" align="right"> <a accesskey="n" href="db-api-detailed.html">Next</a></td></tr></table><hr></div><div class="sect1"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="apm-design"></a>Package Manager Design</h2></div></div></div><div class="authorblurb"><p>By Bryan Quinn</p>
           OpenACS docs are written by the named authors, and may be edited
           by OpenACS documentation staff.
         </div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a name="apm-design-essentials"></a>Essentials</h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><a class="ulink" href="/acs-admin/apm" target="_top">OpenACS Administrator directory</a></p></li><li class="listitem"><p><a class="xref" href="apm-requirements.html" title="Package Manager Requirements">Package Manager Requirements</a></p></li><li class="listitem"><p><a class="xref" href="packages.html" title="OpenACS Packages">Packages</a></p></li><li class="listitem"><p><a class="ulink" href="../images/apm.pdf" target="_top">ER diagram</a></p></li><li class="listitem"><p>Tcl API </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: circle; "><li class="listitem"><p><a class="ulink" href="/api-doc/procs-file-view?path=packages%2facs%2dtcl%2ftcl%2fapm%2dprocs%2etcl" target="_top">
@@ -26,14 +26,14 @@ Examples of services include the <a class="ulink" href="/doc/acs-content-reposit
 Content Repository</a>, the <a class="ulink" href="/doc/acs-templating" target="_top">OpenACS Templating
 System</a>, and the <a class="link" href="kernel-doc.html" title="Chapter 15. Kernel Documentation">OpenACS Kernel</a>, which includes
 APM.</p></li></ul></div><p>An installation of the OpenACS includes the OpenACS Kernel, some services that
-extend the kernel's functionality, and some applications intended for
+extend the kernel&#39;s functionality, and some applications intended for
 end-users. Packages function as individual pieces of <a class="link" href="subsites-design.html" title="Subsites Design Document">subsites</a>. A subsite can contain multiple
 application and service instances that provide the end-user with capabilities
 and content customized to the particular subsite.</p><p>This architecture supports the growth of collaborative commerce. For
 example, Jane User starts a forum focusing on the merits of View Cameras by
 creating an instance of the Forum application for her personal subsite on an
-OpenACS Installation. Jack User discovers Jane's forum and includes a link to
-it in his subsite. As interest in Jane's forum grows, she creates a
+OpenACS Installation. Jack User discovers Jane&#39;s forum and includes a link to
+it in his subsite. As interest in Jane&#39;s forum grows, she creates a
 subsite specializing in providing information about View cameras. This
 subsite now includes several package instances beyond Forum; it could
 potentially include its own Ecommerce capabilities (ala <a class="ulink" href="http://shopping.yahoo.com" target="_top">Yahoo! Shopping</a>). This could include a
@@ -41,7 +41,7 @@ knowledge management application that allows users to spread expertise about
 view cameras and a portal application that links to reliable camera models
 and resellers. Any subsite enabled package that is added to the OpenACS
 installation through APM is another potential package instance that can
-become part of Jane's View Camera subsite.</p><p>The APM provides an architecture for packaging software, making instances
+become part of Jane&#39;s View Camera subsite.</p><p>The APM provides an architecture for packaging software, making instances
 of that software available to subsites, specifying configuration parameters
 for each instance, and managing the creation and release of new packages.</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a name="apm-design-hist-considerations"></a>Historical Considerations</h3></div></div></div><p>
 Prior to ACS 3.3, all packages were lumped together into one monolithic
@@ -61,12 +61,12 @@ Java stored function</p></li><li class="listitem"><p>changing the data model</p>
 model should <span class="emphasis"><em>not</em></span> affect dependent packages. Rather, the package
 interface should provide a level of abstraction above the data model (as well
 as the rest of the package implementation). Then, users of the package can
-take advantage of implementation improvements that don't affect the
+take advantage of implementation improvements that don&#39;t affect the
 interface (e.g., faster performance from intelligent denormalization of the
 data model), without having to worry that code outside the package will now
 break.</p></li><li class="listitem"><p>A typical ACS-backed site only uses a few of the modules included in the
 distribution, yet there was no well-understood way to pick only what you
-needed when installing the ACS, or even to uninstall what you didn't
+needed when installing the ACS, or even to uninstall what you didn&#39;t
 need, post-installation. Unwanted code had to be removed manually. 
 
 
@@ -123,7 +123,7 @@ following these steps, the package can be subsite specific, available to
 subsites across the system, and be available for distribution to other OpenACS
 installations without doing a monolithic upgrade or reinstall.</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a name="apm-design-api"></a>API</h3></div></div></div><p>The APM is composed of systems for accomplishing a set of package-related
 tasks. Each of these tasks comprise a feature area that has an API, data
-model, and a UI:</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>Authoring a Package</p></li><li class="listitem"><p>Maintaining Multiple Versions of a Package</p></li><li class="listitem"><p>Creating Instances of the Package</p></li><li class="listitem"><p>Specifying Configuration Parameters for each Instance</p></li></ul></div><p><span class="strong"><strong>Authoring a Package</strong></span></p><p>Full instructions on how to prepare an OpenACS package are available in <a class="xref" href="packages.html" title="OpenACS Packages">Packages</a>. The API here can be invoked manually by a package's data model
+model, and a UI:</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>Authoring a Package</p></li><li class="listitem"><p>Maintaining Multiple Versions of a Package</p></li><li class="listitem"><p>Creating Instances of the Package</p></li><li class="listitem"><p>Specifying Configuration Parameters for each Instance</p></li></ul></div><p><span class="strong"><strong>Authoring a Package</strong></span></p><p>Full instructions on how to prepare an OpenACS package are available in <a class="xref" href="packages.html" title="OpenACS Packages">Packages</a>. The API here can be invoked manually by a package&#39;s data model
 creation script, but need not to be used. This API is part of the <a class="ulink" href="/api-doc/plsql-subprogram-one?type=PACKAGE&amp;name=APM" target="_top">APM PL/SQL
 package</a>.</p><pre class="programlisting">
 
@@ -232,7 +232,7 @@ function edit (
 ) return apm_package_versions.version_id%TYPE;
 
 </pre><p>Versions can be enabled or disabled. Enabling a version instructs APM to
-source the package's libraries on startup and to make the package
+source the package&#39;s libraries on startup and to make the package
 available to the OpenACS.</p><pre class="programlisting">
 
 procedure enable (
@@ -467,7 +467,7 @@ procedure set_value (
 table where each package is registered. When a new application or service is
 installed on an OpenACS instance, a corresponding row in this table is inserted
 with information about the type of package, e.g. if the <a class="ulink" href="/doc/forum" target="_top">forum package</a> is installed on your OpenACS server, a row
-in <code class="computeroutput">apm_package_types</code> will be created, noting that it's an
+in <code class="computeroutput">apm_package_types</code> will be created, noting that it&#39;s an
 application package type.</p><p>The <code class="computeroutput">apm_packages</code> table is used to contain information about
 the <span class="emphasis"><em>instances</em></span> of packages currently created in the system. The
 <code class="computeroutput">package_key</code> column references the <code class="computeroutput">apm_package_types</code>
@@ -541,4 +541,4 @@ for authoring, maintaining, and installing packages. The current UI presents
 all of this functionality in one interface and it can be confusing from a
 usability perspective.</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a name="apm-design-authors"></a>Authors</h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>System creator: Bryan Quinn, Jon Salz, Michael Yoon, Lars Pind, Todd
 Nightingale.</p></li><li class="listitem"><p>System owner: Bryan Quinn</p></li><li class="listitem"><p>Documentation author: Bryan Quinn, building from earlier versions by Jon
-Salz, Michael Yoon, and Lars Pind.</p></li></ul></div></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a name="apm-design-rev-history"></a>Revision History</h3></div></div></div><div class="informaltable"><table cellspacing="0" border="1"><colgroup><col><col><col><col></colgroup><tbody><tr><td><span class="strong"><strong>Document Revision #</strong></span></td><td><span class="strong"><strong>Action Taken, Notes</strong></span></td><td><span class="strong"><strong>When?</strong></span></td><td><span class="strong"><strong>By Whom?</strong></span></td></tr><tr><td>0.1</td><td>Creation</td><td>9/25/2000</td><td>Bryan Quinn</td></tr><tr><td>0.8</td><td>Ready for QA</td><td>9/29/2000</td><td>Bryan Quinn</td></tr><tr><td>0.9</td><td>Edited for ACS 4 Beta release</td><td>10/02/2000</td><td>Kai Wu</td></tr><tr><td>1.0</td><td>Edited for OpenACS 4.5 Beta release</td><td>03/02/2002</td><td>Roberto Mello</td></tr></tbody></table></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="apm-requirements.html">Prev</a> </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right"> <a accesskey="n" href="db-api-detailed.html">Next</a></td></tr><tr><td width="40%" align="left">Package Manager Requirements </td><td width="20%" align="center"><a accesskey="u" href="kernel-doc.html">Up</a></td><td width="40%" align="right"> Database Access API</td></tr></table><hr><address><a href="mailto:docs@openacs.org">docs@openacs.org</a></address></div><a name="comments"></a><center><a href="http://openacs.org/doc/current/apm-design.html#comments">View comments on this page at openacs.org</a></center></body></html>
+Salz, Michael Yoon, and Lars Pind.</p></li></ul></div></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a name="apm-design-rev-history"></a>Revision History</h3></div></div></div><div class="informaltable"><table class="informaltable" cellspacing="0" border="1"><colgroup><col><col><col><col></colgroup><tbody><tr><td><span class="strong"><strong>Document Revision #</strong></span></td><td><span class="strong"><strong>Action Taken, Notes</strong></span></td><td><span class="strong"><strong>When?</strong></span></td><td><span class="strong"><strong>By Whom?</strong></span></td></tr><tr><td>0.1</td><td>Creation</td><td>9/25/2000</td><td>Bryan Quinn</td></tr><tr><td>0.8</td><td>Ready for QA</td><td>9/29/2000</td><td>Bryan Quinn</td></tr><tr><td>0.9</td><td>Edited for ACS 4 Beta release</td><td>10/02/2000</td><td>Kai Wu</td></tr><tr><td>1.0</td><td>Edited for OpenACS 4.5 Beta release</td><td>03/02/2002</td><td>Roberto Mello</td></tr></tbody></table></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="apm-requirements.html">Prev</a> </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right"> <a accesskey="n" href="db-api-detailed.html">Next</a></td></tr><tr><td width="40%" align="left">Package Manager Requirements </td><td width="20%" align="center"><a accesskey="u" href="kernel-doc.html">Up</a></td><td width="40%" align="right"> Database Access API</td></tr></table><hr><address><a href="mailto:docs@openacs.org">docs@openacs.org</a></address></div><a name="comments"></a><center><a href="http://openacs.org/doc/current/apm-design.html#comments">View comments on this page at openacs.org</a></center></body></html>

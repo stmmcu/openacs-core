@@ -111,7 +111,7 @@ template::list::create \
                   (<a href="?@nodes.expand_url@#@nodes.node_id@">-</a>)
                 </if>
                 <if @nodes.instance_url@ ne none>
-                  <a href="?@nodes.name_url@">@nodes.name;noquote@</a>
+                  <a href="@nodes.name_url@">@nodes.name;noquote@</a>
                 </if><else>
                   @nodes.name;noquote@
                 </else>
@@ -208,7 +208,7 @@ db_foreach nodes_select {} {
     set parameters_url ""
     set permissions_url ""
 
-    if { [lsearch -exact $open_nodes $parent_id] == -1 && $parent_id ne "" && $mylevel > 2 } { continue }
+    if { $parent_id ni $open_nodes && $parent_id ne "" && $mylevel > 2 } { continue }
 
     if {$directory_p == "t"} {
         set add_folder_url [export_vars -base . {expand:multiple root_id node_id {new_parent $node_id} {new_type folder}}]

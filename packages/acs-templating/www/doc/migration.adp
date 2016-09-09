@@ -8,15 +8,16 @@
 <h3>In a Nutshell</h3>
 
 When templatizing a legacy tcl page, your task is to
-<b>separate</b>
- code and graphical presentation. The latter goes
-into an ADP file; it contains essentially HTML, augmented by a few
-special tags and the <code>\@<i>variable</i>\@</code>
- construct. The
-code goes into a Tcl script. In other words, a templated page
-consists of two files, a Tcl part that puts its results in data
-sources, and an ADP page (the template), into which these data
-sources will be interpolated to yield a complete HTML page.
+<strong>separate</strong>
+ code and graphical presentation. The
+latter goes into an ADP file; it contains essentially HTML,
+augmented by a few special tags and the
+<code>\@<em>variable</em>\@</code>
+ construct. The code goes into a
+Tcl script. In other words, a templated page consists of two files,
+a Tcl part that puts its results in data sources, and an ADP page
+(the template), into which these data sources will be interpolated
+to yield a complete HTML page.
 <h3>General</h3>
 <p>As usual, the Tcl page should start with a call to
 <code>ad_page_contract</code>. In its <code>-properties</code>
@@ -37,16 +38,16 @@ file.</p>
 <p>A few more hints</p>
 <ul>
 <li>Do not write to the connection directly. Avoid
-<code>ns_puts</code>, <code>ns_write</code> etc., which don't wait
-till the headers are written or the page is completed; they may act
-differently than you expect.</li><li>If you can, put code in the tcl file, not between <code>&lt;%
+<code>ns_puts</code>, <code>ns_write</code> etc., which don&#39;t
+wait till the headers are written or the page is completed; they
+may act differently than you expect.</li><li>If you can, put code in the tcl file, not between <code>&lt;%
 %&gt;</code> in the adp page.</li><li>Put HTML in the adp page, not int the tcl program. Put reusable
 HTML fragments in a separate adp file (think of it as a widget)
 that will be <code>&lt;include&gt;</code>d from several pages.
 Prefer this to writing a tcl proc that returns HTML.</li><li>Remember to remove backslashes where you had to escape special
 characters, as in
 <blockquote><pre>
-Nuts  <font color="red">\</font>$2.70 <font color="red">\</font>[&lt;a href=<font color="red">\</font>"shoppe<font color="red">\</font>"&gt;buy&lt;/a&gt;<font color="red">\</font>]
+Nuts  <font color="red">\</font>$2.70 <font color="red">\</font>[&lt;a href="<font color="red">\</font>"shoppe<font color="red">\</font>"&gt;buy&lt;/a&gt;<font color="red">\</font>]
           
 </pre></blockquote>
 </li>
@@ -246,12 +247,12 @@ module that uses the mechanism, not a whole page.
   context_bar:onevalue
   subsite_id:onevalue
   subsite:multirow
-</font><b>item</b>:multirow<font color="#999999">
+</font><strong>item</strong>:multirow<font color="#999999">
   footer:onevalue
 }</font>
 </pre></td><td> </td>
 </tr><tr bgcolor="#CCCCCC">
-<td align="center"><b>...</b></td><td align="center"><b>...</b></td><td align="center"><b>...</b></td>
+<td align="center"><strong>...</strong></td><td align="center"><strong>...</strong></td><td align="center"><strong>...</strong></td>
 </tr><tr>
 <td valign="top"><pre>
 append body "
@@ -266,8 +267,8 @@ append body "
     and (   expiration_date is null
          or expiration_date &gt; sysdate)
 } {
-    append body "&lt;li&gt;&lt;a href=
-        \"item-view?news_item_id=<font color="blue">"\
+    append body "&lt;li&gt;&lt;a href="
+        \"item-view?news_item_id=<font color="b" lue="">"\
         "</font>$news_item_id\"
         &gt;$title&lt;/a&gt;\n"
 
@@ -282,13 +283,13 @@ append body "
 &lt;p&gt;&lt;li&gt;You can use the &lt;a href=
     \"admin/\"&gt;administration
     interface&lt;/a&gt; to post a new
-    item (there's currently no
+    item (there&#39;s currently no
     security in place).
 
 &lt;/ul&gt;
 "
 </pre></td><td valign="top"><pre>
-<font color="green">db_multirow <b>item</b>
+<font color="green">db_multirow <strong>item</strong>
 </font> news_items_select {
     select news_item_id, title
     from news_items_obj
@@ -303,7 +304,7 @@ append body "
 &lt;ul&gt;
 
 
-&lt;multiple name=<b>item</b>&gt;
+&lt;multiple name=<strong>item</strong>&gt;
 
 
 
@@ -312,12 +313,12 @@ append body "
 
 
   &lt;li&gt;&lt;a href=
-      "item-view?news_item_id=<font color="blue">&lt;%
-      %&gt;</font>\@<b>item</b>.news_item_id\@"
-      &gt;\@<b>item</b>.title\@&lt;/a&gt;
+      "item-view?news_item_id=<font color="b" lue="">&lt;%
+      %&gt;</font>\@<strong>item</strong>.news_item_id\@"
+      &gt;\@<strong>item</strong>.title\@&lt;/a&gt;
 &lt;/multiple&gt;
 
-&lt;if \@<b>item</b>:rowcount\@ eq 0&gt;
+&lt;if \@<strong>item</strong>:rowcount\@ eq 0&gt;
   &lt;li&gt;There are
   currently no news items
   available.
@@ -327,7 +328,7 @@ append body "
 &lt;p&gt;&lt;li&gt;You can use the &lt;a href=
   "admin/"&gt;administration
   interface&lt;/a&gt; to post a new
-  item (there's currently no
+  item (there&#39;s currently no
   security in place).
 
 &lt;/ul&gt;
@@ -344,7 +345,7 @@ the case when no lines are returned. (The
 documentation</a>.</li><li>Blue color marks additional syntax necessary to wrap lines
 short.</li><li>The proc <code>db_multirow</code> does have a code block and an
 optional <code>if_no_rows</code> block, just like
-<code>db_foreach</code>. They aren't used in the example,
+<code>db_foreach</code>. They aren&#39;t used in the example,
 though.</li>
 </ul>
 <p>If you have a more complicated db_foreach, where logic is
@@ -361,11 +362,11 @@ value.</p>
 <th><code>packages/acs-core-ui/www/pvt/alerts.tcl</code></th><th><code>packages/acs-core-ui/www/pvt/alerts.adp</code></th>
 </tr><tr>
 <td valign="top"><pre><font color="#999999">ad_page_contract {
-    \@cvs-id $&zwnj;Id: migration.html,v 1.3 2014/10/27 16:40:14 victorg Exp $
+    \@cvs-id $&zwnj;Id: migration.html,v 1.3.2.1 2016/06/22 07:48:43 gustafn Exp $
 } {
 }</font></pre></td><td valign="top"><pre>
 <font color="#999999">ad_page_contract {
-    \@cvs-id $&zwnj;Id: migration.html,v 1.3 2014/10/27 16:40:14 victorg Exp $
+    \@cvs-id $&zwnj;Id: migration.html,v 1.3.2.1 2016/06/22 07:48:43 gustafn Exp $
 } {
 } -properties {
     header:onevalue
@@ -380,7 +381,7 @@ value.</p>
 }</font>
 </pre></td><td> </td>
 </tr><tr bgcolor="#CCCCCC">
-<td align="center"><b>...</b></td><td align="center"><b>...</b></td><td align="center"><b>...</b></td>
+<td align="center"><strong>...</strong></td><td align="center"><strong>...</strong></td><td align="center"><strong>...</strong></td>
 </tr><tr>
 <td valign="top"><pre>
 
@@ -409,15 +410,15 @@ if { [db_table_exists "bboard_email_alerts"] } {
      <font color="#999999"># alert has been disabled </font>
      set status "<font color="#999999">Disabled</font>"
      set action "
-     <font color="#999999">&lt;a href=\"/bboard/alert-reenable\"&gt;
-     Re-enable&lt;/a&gt;</font>"
+     <font color="#999999">&lt;a href="\"/bboard/alert-reenable\"&gt;
+"     Re-enable&lt;/a&gt;</font>"
    } else {
      <font color="#999999"># alert is enabled</font>
      set status "
      <font color="#999999">&lt;font color=red&gt;Enabled&lt;/font&gt;</font>"
      set action "
-     <font color="#999999">&lt;a href=\"/bboard/alert-disable\"&gt;
-     Disable&lt;/a&gt;</font>"
+     <font color="#999999">&lt;a href="\"/bboard/alert-disable\"&gt;
+"     Disable&lt;/a&gt;</font>"
    }
 
    append existing_alert_rows "<font color="#999999">&lt;tr&gt;
@@ -570,5 +571,5 @@ Brechbühler</a>, <a href="mailto:iwashima\@mit.edu">Hiro
 Iwashima</a>
 </address>
 
-Last modified: $&zwnj;Id: migration.html,v 1.3 2014/10/27 16:40:14
-victorg Exp $
+Last modified: $&zwnj;Id: migration.html,v 1.3.2.1 2016/06/22 07:48:43
+gustafn Exp $

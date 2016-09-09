@@ -109,9 +109,10 @@ ad_proc -private apm_package_selection_widget {
         return ""
     }
 
+    set label [dict get {install Install upgrade Upgrade all Install/Update} $operation]
     set counter 0
-    set widget "<blockquote><table class='list-table' cellpadding='3' cellspacing='5' summary='Available Packages'>
-      <tr class='list-header'><th>Install</th><th>Package</th><th>Package Key</th><th>Comment</th></tr>"
+    set widget [subst {<blockquote><table class='list-table' cellpadding='3' cellspacing='5' summary='Available Packages'>
+        <tr class='list-header'><th>$label</th><th>Package</th><th>Package Key</th><th>Comment</th></tr>}]
 
     foreach pkg_info $pkg_info_list {
         
@@ -595,6 +596,10 @@ ad_proc -private apm_build_repository {
                   [list &channels channels update_pretty_date $update_pretty_date]]
     close $fw
 
+    # Add a redirector for outdated releases
+    set fw [open "${work_dir}repository/index.vuh" w]
+    puts $fw "ns_returnredirect /repository/"
+    close $fw
 
     # Without the trailing slash
     set work_repository_dirname "${work_dir}repository"

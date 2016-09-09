@@ -21,7 +21,7 @@
 
 <fullquery name="cr_write_content.write_lob_content">
       <querytext>
-          select lob as content
+          select lob as content, 'lob' as storage_type
           from cr_revisions
           where revision_id = :revision_id
       </querytext>
@@ -105,8 +105,12 @@
             /* mime_type     => */ null,
             /* nls_language  => */ null,
             /* text          => */ null,
+            /* data          => */ null,
+            /* relation_tag  => */ null,
+            /* is live       => */ 'f',
             /* storage_type  => */ :storage_type,
-            /* package_id    => */ :package_id
+            /* package_id    => */ :package_id,
+            /* w_child_rels  => */ 't'
     );
       </querytext>
 </fullquery>

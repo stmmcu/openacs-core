@@ -7,13 +7,13 @@ Management</property>
 <include src="/packages/acs-core-docs/lib/navheader"
 		    leftLink="maint-performance" leftLabel="Prev"
 		    title="
-Part II. Administrator's Guide"
+Part II. Administrator&#39;s Guide"
 		    rightLink="remote-postgres" rightLabel="Next">
 		<div class="chapter">
 <div class="titlepage"><div><div><h2 class="title">
 <a name="database-management" id="database-management"></a>Chapter 7. Database
 Management</h2></div></div></div><div class="toc">
-<p><b>Table of Contents</b></p><dl class="toc">
+<p><strong>Table of Contents</strong></p><dl class="toc">
 <dt><span class="sect1"><a href="remote-postgres">Running a
 PostgreSQL database on another server</a></span></dt><dt><span class="sect1"><a href="install-openacs-delete-tablespace">Deleting a
 tablespace</a></span></dt><dt><span class="sect1"><a href="install-next-nightly-vacuum">Vacuum Postgres

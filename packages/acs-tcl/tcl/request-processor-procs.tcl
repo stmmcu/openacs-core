@@ -244,8 +244,7 @@ ad_proc -private rp_invoke_filter { conn filter_info why } {
     the browser if it fails (unless <i>kind</i> is <code>trace</code>).
 
 } {
-    set startclicks [clock clicks -milliseconds]
-
+    set startclicks [clock clicks -microseconds]
     lassign $filter_info filter_index debug_p arg_count proc arg
 
     rp_debug -debug $debug_p "Invoking $why filter $proc"
@@ -268,7 +267,7 @@ ad_proc -private rp_invoke_filter { conn filter_info why } {
     if { $errno } {
         # Uh-oh - an error occurred.
         ds_add rp [list filter [list $why [ns_conn method] [ns_conn url] $proc $arg] \
-                       $startclicks [clock clicks -milliseconds] "error" $::errorInfo]
+                       $startclicks [clock clicks -microseconds] "error" $::errorInfo]
         # make sure you report catching the error!
         rp_debug "error in filter $proc for [ns_conn method] [ns_conn url]?[ns_conn query] errno is $errno message is $::errorInfo"
         rp_report_error
@@ -278,14 +277,14 @@ ad_proc -private rp_invoke_filter { conn filter_info why } {
 
         set error_msg "error in filter $proc for [ns_conn method] [ns_conn url]?[ns_conn query].  Filter returned invalid result \"$result\""
         ds_add rp [list filter [list $why [ns_conn method] [ns_conn url] $proc $arg] \
-                       $startclicks [clock clicks -milliseconds] "error" $error_msg]
+                       $startclicks [clock clicks -microseconds] "error" $error_msg]
         # report the bad filter_return message
         rp_debug -debug t -ns_log_level error $error_msg
         rp_report_error -message $error_msg
         set result "filter_return"
     } else {
         ds_add rp [list filter [list $why [ns_conn method] [ns_conn url] $proc $arg] \
-                       $startclicks [clock clicks -milliseconds] $result]
+                       $startclicks [clock clicks -microseconds] $result]
     }
 
     rp_debug -debug $debug_p "Done invoking $why filter $proc (returning $result)"
@@ -304,7 +303,7 @@ ad_proc -private rp_invoke_proc { conn argv } {
     Invokes a registered procedure.
 
 } {
-    set startclicks [clock clicks -milliseconds]
+    set startclicks [clock clicks -microseconds]
 
     lassign $argv proc_index debug_p arg_count proc arg
 
@@ -324,11 +323,11 @@ ad_proc -private rp_invoke_proc { conn argv } {
 
     if { $errno } {
         # Uh-oh - an error occurred.
-        ds_add rp [list registered_proc [list $proc $arg] $startclicks [clock clicks -milliseconds] "error" $::errorInfo]
+        ds_add rp [list registered_proc [list $proc $arg] $startclicks [clock clicks -microseconds] "error" $::errorInfo]
         rp_debug "error in $proc for [ns_conn method] [ns_conn url]?[ns_conn query] errno is $errno message is $::errorInfo"
         rp_report_error
     } else {
-        ds_add rp [list registered_proc [list $proc $arg] $startclicks [clock clicks -milliseconds]]
+        ds_add rp [list registered_proc [list $proc $arg] $startclicks [clock clicks -microseconds]]
     }
 
     rp_debug -debug $debug_p "Done Invoking registered procedure $proc"
@@ -491,11 +490,11 @@ ad_proc -private rp_serve_resource_file { path } {
     set expireTime [parameter::get -package_id [ad_acs_kernel_id] -parameter ResourcesExpireInterval -default 0]
     if {$expireTime != 0} {
         if {![string is integer -strict $expireTime]} {
-            if {[regexp {^(\d)+d} $expireTime _ t]} {
+            if {[regexp {^(\d+)d} $expireTime _ t]} {
                 set expireTime [expr {60*60*24*$t}]
-            } elseif {[regexp {^(\d)+h} $expireTime _ t]} {
+            } elseif {[regexp {^(\d+)h} $expireTime _ t]} {
                 set expireTime [expr {60*60*$t}]
-            } elseif {[regexp {^(\d)+m} $expireTime _ t]} {
+            } elseif {[regexp {^(\d+)m} $expireTime _ t]} {
                 set expireTime [expr {60*$t}]
             } else {
                 ns_log error "invalid expire time '$expireTime' specified"
@@ -574,7 +573,7 @@ ad_proc -private rp_filter { why } {
         ad_conn -set request [nsv_incr rp_properties request_count]
     }
     ad_conn -set user_id 0
-    ad_conn -set start_clicks [clock clicks -milliseconds]
+    ad_conn -set start_clicks [clock clicks -microseconds]
 
     ds_collect_connection_info
 
@@ -582,8 +581,37 @@ ad_proc -private rp_filter { why } {
     # Start of patch "hostname-based subsites"
     # -------------------------------------------------------------------------
     # 1. determine the root of the host and the requested URL
-    set root [root_of_host [ad_host]]
+    if {[catch {set root [root_of_host [ad_host]]} errorMsg]} {
+        # check if error message was returned already earlier
+        if {[ad_exception $::errorCode] ne "ad_script_abort"} {
+            ad_page_contract_handle_datasource_error "Host header is invalid"
+        }
+        return filter_return
+    }
     set ad_conn_url [ad_conn url]
+
+    if {[string first [encoding convertto utf-8 \x00] $ad_conn_url] > -1} {
+        ad_log warning "BAD CHAR in URL $ad_conn_url // rp_filter $why"
+        # reset [ad_conn url], otherwise we might run into a problem when rendering the error page
+        ad_conn -set url ${root}/
+        ad_page_contract_handle_datasource_error "URL contains invalid characters"
+        return filter_return
+    }
+    if {[string length $ad_conn_url] > [parameter::get -package_id [ad_acs_kernel_id] -parameter MaxUrlLength -default 2000]} {
+        ad_log warning "URL TOO LONG: <$ad_conn_url> rp_filter $why"
+        # reset [ad_conn url], otherwise we might run into a problem when rendering the error page
+        ad_conn -set url ${root}/
+        ad_page_contract_handle_datasource_error "URL is longer than allowed"
+        return filter_return
+    }
+
+    if {[ns_set get [ns_conn headers] Upgrade-Insecure-Requests 0]
+        && [security::https_available_p]
+        && ![security::secure_conn_p]
+    } {
+        security::redirect_to_secure -script_abort=false [ad_return_url -qualified]
+        return filter_return
+    }
 
     # 2. handle special case: if the root is a prefix of the URL, 
     #                         remove this prefix from the URL, and redirect.
@@ -659,7 +687,7 @@ ad_proc -private rp_filter { why } {
     # expects urlc to be set to the length of urlv and urlv to have a non-null
     # trailing element except in the case where urlc is 0 and urlv the empty list.
 
-    if { [lindex [ad_conn urlv] end] == "" } {
+    if { [lindex [ad_conn urlv] end] eq "" } {
         ad_conn -set urlc [expr {[ad_conn urlc] - 1}]
         ad_conn -set urlv [lrange [ad_conn urlv] 0 [expr {[llength [ad_conn urlv]] - 2}] ]
     }
@@ -667,7 +695,7 @@ ad_proc -private rp_filter { why } {
 
     if { [catch { array set node [site_node::get -url $ad_conn_url] } errmsg] } {
         # log and do nothing
-        rp_debug "error within rp_filter [ns_conn method] [ns_conn url] [ns_conn query].  $errmsg"
+        ad_log error "error within rp_filter when getting site node: $errmsg"
     } else {
 
         if {$node(url) eq "$ad_conn_url/"} {
@@ -723,17 +751,14 @@ ad_proc -private rp_filter { why } {
         ad_conn -set locale $locale
         ad_conn -set language [lang::conn::language -locale $locale]
         ad_conn -set charset [lang::util::charset_for_locale $locale] 
-    }] } {
-        # acs-lang doesn't seem to be installed. Even though it must be installed now,
-        # the problem is that if it isn't, everything breaks. So we wrap it in
-        # a catch, and set locale and language to the empty strings.
-        # This is a temporary work-around until it's reasonably safe
-        # to assume that most people have added acs-lang to their system.
-        ad_conn -set locale ""
-        ad_conn -set language ""
-        ad_conn -set charset ""
+    } errorMsg] } {
+        ns_log warning "language setup failed: $errorMsg"
+        ad_return_complaint 1 "invalid language settings"
+        rp_finish_serving_page
+        return "filter_return"
     }
 
+    set headers [ns_conn headers]
     if {[ns_info name] eq "NaviServer"}  {
         # provide context information for background writer
         set requestor [expr {$::ad_conn(user_id) == 0 ? [ad_conn peeraddr] : $::ad_conn(user_id)}]
@@ -836,7 +861,10 @@ ad_proc rp_report_error {
 }
 
 ad_proc -private rp_path_prefixes {path} {
-    Returns all the prefixes of a path ordered from most to least specific.
+    
+    Returns all the prefixes of a path ordered from most to least
+    specific.
+    
 } {
     if {[string index $path 0] ne "/"} {
         set path "/$path"
@@ -859,8 +887,8 @@ ad_proc -private rp_path_prefixes {path} {
 
 ad_proc -private rp_handler {} {
 
-    The request handler, which responds to absolutely every HTTP request made to
-    the server.
+    The request handler, which responds to absolutely every HTTP
+    request made to the server.
 
 } {
 
@@ -876,7 +904,10 @@ ad_proc -private rp_handler {} {
         ad_returnredirect [ns_conn url]
         return
     }
-    if {$ad_conn(extra_url) ne "" && ![string match "*$ad_conn(extra_url)" [ns_conn url]]} {
+    if {[info exists ad_conn(extra_url)]
+        && $ad_conn(extra_url) ne ""
+        && ![string match "*$ad_conn(extra_url)" [ns_conn url]]
+    } {
         #
         # On internal redirects, the current ad_conn(extra_url) might be
         # from a previous request, which might have lead to a not-found
@@ -899,7 +930,7 @@ ad_proc -private rp_handler {} {
     set recursion_count [ad_conn recursion_count] 
     ad_conn -set recursion_count [incr recursion_count]
 
-    set startclicks [clock clicks -milliseconds]
+    set startclicks [clock clicks -microseconds]
     rp_debug "rp_handler: handling request: [ns_conn method] [ns_conn url]?[ns_conn query]"
     if { [set code [catch {
         if { [rp_performance_mode] } {
@@ -936,23 +967,23 @@ ad_proc -private rp_handler {} {
                     continue
                 }
             }
-            ds_add rp [list notice "Trying rp_serve_abstract_file $root/$extra_url" $startclicks [clock clicks -milliseconds]]
+            ds_add rp [list notice "Trying rp_serve_abstract_file $root/$extra_url" $startclicks [clock clicks -microseconds]]
 
             ad_try {
                 rp_serve_abstract_file "$root/$extra_url"
                 set tcl_url2file([ad_conn url]) [ad_conn file]
                 set tcl_url2path_info([ad_conn url]) [ad_conn path_info]
             } notfound val {
-                ds_add rp [list notice "File $root/$extra_url: Not found" $startclicks [clock clicks -milliseconds]]
-                ds_add rp [list transformation [list notfound "$root / $extra_url" $val] $startclicks [clock clicks -milliseconds]]
+                ds_add rp [list notice "File $root/$extra_url: Not found" $startclicks [clock clicks -microseconds]]
+                ds_add rp [list transformation [list notfound "$root / $extra_url" $val] $startclicks [clock clicks -microseconds]]
                 continue
             } redirect url {
-                ds_add rp [list notice "File $root/$extra_url: Redirect" $startclicks [clock clicks -milliseconds]]
+                ds_add rp [list notice "File $root/$extra_url: Redirect" $startclicks [clock clicks -microseconds]]
                 ds_add rp [list transformation [list redirect $root/$extra_url $url] $startclicks [clock clicks -milliseconds]]
                 ad_returnredirect $url
             } directory dir_index {
-                ds_add rp [list notice "File $root/$extra_url: Directory index" $startclicks [clock clicks -milliseconds]]
-                ds_add rp [list transformation [list directory $root/$extra_url $dir_index] $startclicks [clock clicks -milliseconds]]
+                ds_add rp [list notice "File $root/$extra_url: Directory index" $startclicks [clock clicks -microseconds]]
+                ds_add rp [list transformation [list directory $root/$extra_url $dir_index] $startclicks [clock clicks -microseconds]]
                 continue
             }
             return
@@ -991,20 +1022,20 @@ ad_proc -private rp_handler {} {
                     set tcl_url2file([ad_conn url]) [ad_conn file]
                     set tcl_url2path_info([ad_conn url]) [ad_conn path_info]
                 } notfound val {
-                    ds_add rp [list transformation [list notfound $root$prefix $val] $startclicks [clock clicks -milliseconds]]
+                    ds_add rp [list transformation [list notfound $root$prefix $val] $startclicks [clock clicks -microseconds]]
                     continue
                 } redirect url {
-                    ds_add rp [list transformation [list redirect $root$prefix $url] $startclicks [clock clicks -milliseconds]]
+                    ds_add rp [list transformation [list redirect $root$prefix $url] $startclicks [clock clicks -microseconds]]
                     ad_returnredirect $url
                 } directory dir_index {
-                    ds_add rp [list transformation [list directory $root$prefix $dir_index] $startclicks [clock clicks -milliseconds]]
+                    ds_add rp [list transformation [list directory $root$prefix $dir_index] $startclicks [clock clicks -microseconds]]
                     continue
                 }
                 return
             }
         }
 
-        ds_add rp [list transformation [list notfound $root/$extra_url notfound] $startclicks [clock clicks -milliseconds]]
+        ds_add rp [list transformation [list notfound $root/$extra_url notfound] $startclicks [clock clicks -microseconds]]
         ns_returnnotfound
     } errmsg]] } {
         if {$code == 1} {
@@ -1102,7 +1133,7 @@ ad_proc -public rp_serve_concrete_file {file} {
     Serves a file.
 } {
     set extension [file extension $file]
-    set startclicks [clock clicks -milliseconds]
+    set startclicks [clock clicks -microseconds]
 
     if { [nsv_exists rp_extension_handlers $extension] } {
         set handler [nsv_get rp_extension_handlers $extension]
@@ -1118,15 +1149,15 @@ ad_proc -public rp_serve_concrete_file {file} {
                 # do nothing
             }
             rp_finish_serving_page
-            ds_add rp [list serve_file [list $file $handler] $startclicks [clock clicks -milliseconds]]
+            ds_add rp [list serve_file [list $file $handler] $startclicks [clock clicks -microseconds]]
         } error]] } {
-            ds_add rp [list serve_file [list $file $handler] $startclicks [clock clicks -milliseconds] \
+            ds_add rp [list serve_file [list $file $handler] $startclicks [clock clicks -microseconds] \
                            error "$::errorCode: $::errorInfo"]
             return -code $errno -errorcode $::errorCode -errorinfo $::errorInfo $error
         }
     } elseif { [rp_file_can_be_public_p $file] } {
         set type [ns_guesstype $file]
-        ds_add rp [list serve_file [list $file $type] $startclicks [clock clicks -milliseconds]]
+        ds_add rp [list serve_file [list $file $type] $startclicks [clock clicks -microseconds]]
         ns_returnfile 200 $type $file
     } else {
         ad_raise notfound
@@ -1444,6 +1475,20 @@ ad_proc -public ad_conn {args} {
                             # return the physical peer address
                             return [ns_conn $var]
                         }
+
+                        mobile_p {
+                            #
+                            # Check, if we are used from a mobile device (based on user_agent).
+                            #
+                            if {[ns_conn isconnected]} {
+                                set user_agent [string tolower [ns_set get [ns_conn headers] User-Agent]]
+                                set ad_conn(mobile_p) [regexp (android|webos|iphone|ipad) $user_agent]
+                            } else {
+                                set ad_conn(mobile_p) 0
+                            }
+                            return $ad_conn(mobile_p)
+                        }
+                        
                         default {
                             return [ns_conn $var]
                         }
@@ -1616,7 +1661,7 @@ ad_proc ad_host {} {
     if { [regexp {^([^:]+)} $host_and_port match host] } {
         return $host
     } else {
-        return "unknown host"
+        return ""
     }
 }
 
@@ -1635,19 +1680,34 @@ ad_proc ad_port {} {
 namespace eval ::acs {}
 
 ad_proc root_of_host {host} {
+    
     Maps a hostname to the corresponding sub-directory.
+    
 } {
     set key ::acs::root_of_host($host)
     if {[info exists $key]} {return [set $key]}
-    set $key [root_of_host1 $host]
+    set $key [root_of_host_noncached $host]
 }
 
-proc root_of_host1 {host} {
+ad_proc -private root_of_host_noncached {host} {
+
+    Helper function for root_of_host, which performs the actual work.
+    
+} {
+    #
     # The main hostname is mounted at /.
-    if { $host eq [ns_config ns/server/[ns_info server]/module/nssock Hostname] } {
-        return ""
+    #
+    foreach driver {nssock nsssl} {
+        set driver_section [ns_driversection -driver $driver]
+        set configured_hostname [ns_config $driver_section hostname]
+        if { $host eq $configured_hostname } {
+            return ""
+        }
     }
+
+    #
     # Other hostnames map to subsites.
+    #
     set node_id [util_memoize [list rp_lookup_node_from_host $host]]
 
     if {$node_id eq ""} {
@@ -1666,7 +1726,15 @@ proc root_of_host1 {host} {
 }
 
 ad_proc -private rp_lookup_node_from_host { host } {
-    return [db_string node_id {} -default ""]
+    if {$host ne ""} {
+        if {![regexp {^[\w.@+/=$%!*~\[\]-]+$} $host]} {
+            binary scan [encoding convertto utf-8 $host] H* hex
+            ad_log error "rp_lookup_node_from_host: host <$host> (hex $hex) contains invalid characters"
+            ad_return_complaint 1 "invalid request"
+            ad_script_abort
+        }
+        return [db_string node_id {} -default ""]
+    }
 } 
 
 

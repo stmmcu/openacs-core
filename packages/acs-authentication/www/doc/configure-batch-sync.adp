@@ -10,13 +10,13 @@
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
 <a name="configure-batch-sync" id="configure-batch-sync"></a>Configure
 Batch Synchronization</h2></div></div></div><div class="orderedlist"><ol type="1">
-<li><p>Browse to the authentication administration page, <tt class="computeroutput">http://<span class="replaceable"><span class="replaceable">yourserver</span></span><a href="/acs-admin/auth/" target="_top">/acs-admin/auth/</a>
-</tt> and choose an authority for
+<li><p>Browse to the authentication administration page, <kbd class="computeroutput">http://<span class="replaceable"><span class="replaceable">yourserver</span></span><a href="/acs-admin/auth/" target="_top">/acs-admin/auth/</a>
+</kbd> and choose an authority for
 batch sync.</p></li><li><p>Set Batch sync enabled to Yes. Set GetDocument Implementation to
 HTTP GET. Set ProcessDocument Implementation to IMS Enterprise 1.1.
 These settings will cause OpenACS to attempt to retrieve via HTTP a
 list of users in XML format from a location we will specify in a
-few steps.</p></li><li><p>Click OK.</p></li><li><p>On the next page, click <tt class="computeroutput">Configure</tt> on the GetDocument Implementation
+few steps.</p></li><li><p>Click OK.</p></li><li><p>On the next page, click <kbd class="computeroutput">Configure</kbd> on the GetDocument Implementation
 line.</p></li><li><p>Enter either or both the IncrementalURL and SnapshotURL. These
 are the URLs which the external Authority will supply with XML
 files in IMS Enterprise 1.1 format.</p></li><li>
@@ -54,8 +54,8 @@ incremental file record looks like:</p><pre class="programlisting">
   &lt;/sourcedid&gt;
   &lt;/person&gt;
 &lt;/enterprise&gt;
-</pre><p>A snapshot file is similar but doesn't have recstatus, since
-it's not a delta but a list of valid records. See the larger
+</pre><p>A snapshot file is similar but doesn&#39;t have recstatus, since
+it&#39;s not a delta but a list of valid records. See the larger
 example in the design document for more details.</p><p>(More information: <a href="ims-sync-driver-design" title="IMS Sync driver design">the section called “IMS Sync driver
 design”</a>, <a href="http://www.imsproject.org/enterprise/" target="_top">The IMS 1.1 spec</a>)</p>
 </li>

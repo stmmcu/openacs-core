@@ -153,7 +153,9 @@ ad_proc -private permission::permission_p_not_cached {
     # We have a thread-local cache here
     global permission__permission_p__cache
     if { ![info exists permission__permission_p__cache($party_id,$object_id,$privilege)] } {
-        set permission__permission_p__cache($party_id,$object_id,$privilege) [expr {[db_exec_plsql select_permission_p {}] ? 1 : 0 }]
+        set permission__permission_p__cache($party_id,$object_id,$privilege) [db_string select_permission_p {
+            select acs_permission.permission_p(:object_id, :party_id, :privilege)::integer from dual
+        }]
     }
     return $permission__permission_p__cache($party_id,$object_id,$privilege)
 }
@@ -268,7 +270,6 @@ ad_proc -public permission::require_write_permission {
 
     @param creation_user Optionally specify creation_user directly as an optimization. 
                          Otherwise a query will be executed.
-
     @param party_id      The party to have or not have write permission.
 
     @see permission::write_permission_p
@@ -279,64 +280,21 @@ ad_proc -public permission::require_write_permission {
     } 
 }
 
-
-
-ad_proc -deprecated ad_permission_grant {
-    user_id
-    object_id
-    privilege
+ad_proc -public permission::get_parties_with_permission {
+    {-object_id:required}
+    {-privilege "admin"}
 } {
-    Grant a permission
+    Return a list of lists of party_id and acs_object.title,
+    having a given privilege on the given object
 
-    @author ben@openforce.net
+    @param obect_id 
+    @param privilege
 
-    @see permission::grant
-} {
-    permission::grant -party_id $user_id -object_id $object_id -privilege $privilege
-}
-
-ad_proc -deprecated ad_permission_revoke {
-    user_id
-    object_id
-    privilege
-} {
-    Revoke a permission
-
-    @author ben@openforce.net
-
-    @see permission::revoke
-} {
-    permission::revoke -party_id $user_id -object_id $object_id -privilege $privilege
-}
-
-ad_proc -deprecated ad_permission_p {
-    {-user_id ""}
-    object_id
-    privilege
-} { 
     @see permission::permission_p
 } {
-    return [permission::permission_p -party_id $user_id -object_id $object_id -privilege $privilege]
+    return [db_list_of_lists get_parties {}]
 }
 
-ad_proc -deprecated ad_require_permission {
-  object_id
-  privilege
-} {
-    @see permission::require_permission
-} { 
-    permission::require_permission -object_id $object_id -privilege $privilege
-}
-
-ad_proc -private -deprecated ad_admin_filter {} {
-    permission::require_permission -object_id [ad_conn object_id] -privilege "admin"
-    return filter_ok
-}
-
-ad_proc -private -deprecated  ad_user_filter {} {
-    permission::require_permission -object_id [ad_conn object_id] -privilege "read"
-    return filter_ok
-}
 
 # Local variables:
 #    mode: tcl

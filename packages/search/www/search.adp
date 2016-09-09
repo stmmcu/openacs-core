@@ -16,14 +16,14 @@
 </if>
 <if @nstopwords@ gt 1>
   <font color="6f6f6f">
-    #search.lt_The_following_words_a# <b>@stopwords@</b>.
+    #search.lt_The_following_words_a# <strong>@stopwords@</strong>.
     [<a href="help/basics#stopwords">#search.details#</a>]<br>
   </font>
 </if>
 
 <if @count@ eq 0>
-  Your search - <b>@query@</b> - did not match any content.
-  <br>#search.lt_No_pages_were_found_c#<b>@query@</b>".
+  Your search - <strong>@query@</strong> - did not match any content.
+  <br>#search.lt_No_pages_were_found_c#<strong>@query@</strong>".
   <br><br>#search.Suggestions#
   <ul>
     <li>#search.lt_Make_sure_all_words_a#
@@ -68,11 +68,12 @@
     <form method="get" action="search">
       <div>
 	<input type="text" name="q" size="60" maxlength="256" value="@query@">
+         <if @::__csrf_token@ defined><input type="hidden" name="__csrf_token" value="@::__csrf_token;literal@"></if>
 	<input type="submit" value="#search.Search#">
       </div>
     </form>
     <if @t@ eq "Search">
-      <i>#search.lt_Tip_In_most_browsers_#</i>
+      <em>#search.lt_Tip_In_most_browsers_#</em>
     </if>
   </div>
 

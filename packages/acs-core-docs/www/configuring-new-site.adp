@@ -7,13 +7,13 @@ Site</property>
 <include src="/packages/acs-core-docs/lib/navheader"
 		    leftLink="mac-installation" leftLabel="Prev"
 		    title="
-Part II. Administrator's Guide"
+Part II. Administrator&#39;s Guide"
 		    rightLink="configuring-install-packages" rightLabel="Next">
 		<div class="chapter">
 <div class="titlepage"><div><div><h2 class="title">
 <a name="configuring-new-site" id="configuring-new-site"></a>Chapter 4. Configuring
 a new OpenACS Site</h2></div></div></div><div class="toc">
-<p><b>Table of Contents</b></p><dl class="toc">
+<p><strong>Table of Contents</strong></p><dl class="toc">
 <dt><span class="sect1"><a href="configuring-install-packages">Installing OpenACS
 packages</a></span></dt><dt><span class="sect1"><a href="configuring-mounting-packages">Mounting OpenACS
 packages</a></span></dt><dt><span class="sect1"><a href="configuring-configuring-packages">Configuring an OpenACS

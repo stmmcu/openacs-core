@@ -254,10 +254,16 @@ ad_proc -public NsSettoTclString {set_id} {
     return $result
 }
 
-ad_proc -public get_referrer {} {
-    gets the Referer for the headers
-} { 
-    return [ns_set get [ns_conn headers] Referer]
+ad_proc -public get_referrer {-relative:boolean} {
+    @return referer from the request headers.
+    @param relative return the refer without protocol and host
+} {
+    set url [ns_set get [ns_conn headers] Referer]
+    if {$relative_p} {
+        # In case the referrer URL has a protocol and host remove it
+        regexp {^[a-z]+://[^/]+(/.+)$} $url . url
+    }
+    return $url
 }
 
 ##
@@ -701,6 +707,17 @@ ad_proc -public export_vars {
         set url_p 1
     }
 
+    #
+    # TODO: At least the parsing of the options should be transformed
+    # to produce a single dict, containing the properties of all form
+    # vars (probably optionally) and specified arguments. The dict
+    # should be the straightforeward source for the genertion of the
+    # output set. One should be able to speed the code significantly
+    # up (at least for the standard cases).
+    #
+    # -Gustaf Neumann
+    #
+
     # 'noprocessing_vars' is yet another container of variables, 
     # only this one doesn't have the values subst'ed
     # and we don't try to find :multiple and :array flags in the namespec
@@ -896,7 +913,7 @@ ad_proc -public export_vars {
     if { $url_p } {
         set export_list [list]
         for { set i 0 } { $i < $export_size } { incr i } {
-            lappend export_list [ns_urlencode [ns_set key $export_set $i]]=[ns_urlencode [ns_set value $export_set $i]]
+            lappend export_list [ad_urlencode_query [ns_set key $export_set $i]]=[ad_urlencode_query [ns_set value $export_set $i]]
         }
         set export_string [join $export_list "&"]
     } else {
@@ -1207,7 +1224,7 @@ ad_proc export_ns_set_vars {
             set value [ns_set value $setid $set_counter_i]
             if {$name ni $exclusion_list && $name ne ""} {
                 if {$format eq "url"} {
-                    lappend return_list "[ns_urlencode $name]=[ns_urlencode $value]"
+                    lappend return_list "[ad_urlencode_query $name]=[ad_urlencode_query $value]"
                 } else {
                     lappend return_list " name=\"[ns_quotehtml $name]\" value=\"[ns_quotehtml $value]\""
                 }
@@ -1316,7 +1333,7 @@ ad_proc -public export_entire_form_as_url_vars {
                 $vars_to_passthrough eq "" 
                 || ($varname in $vars_to_passthrough)
             } {
-                lappend params "[ns_urlencode $varname]=[ad_urlencode_query $varvalue]" 
+                lappend params "[ad_urlencode_query $varname]=[ad_urlencode_query $varvalue]" 
             }
         }
         return [join $params "&"]
@@ -1655,6 +1672,7 @@ ad_proc -private util_WriteWithExtraOutputHeaders {
 
 ad_proc -private ReturnHeaders {
     {content_type text/html}
+    {content_length ""}
 } {
     We use this when we want to send out just the headers
     and then do incremental writes with ns_write.  This way the user
@@ -1664,13 +1682,14 @@ ad_proc -private ReturnHeaders {
     It returns status 200 and all headers including
     any added to outputheaders.
 } {
-
-    if {[string match "text/*" $content_type] && ![string match "*charset=*" $content_type]} {
+    set text_p [string match "text/*" $content_type]
+    if {$text_p && ![string match "*charset=*" $content_type]} {
         append content_type "; charset=[ns_config ns/parameters OutputCharset iso-8859-1]"
     }
 
     if {[ns_info name] eq "NaviServer"} {
-        ns_headers 200 $content_type
+        set binary [expr {$text_p ? "" : "-binary"}]
+        ns_headers {*}$binary 200 $content_type {*}$content_length
     } else {
         set all_the_headers "HTTP/1.0 200 OK
 MIME-Version: 1.0
@@ -2497,7 +2516,7 @@ ad_proc -public util_absolute_path_p {path} {
 }
 
 ad_proc -public util_driver_info {
-    {-array:required} 
+    {-array} 
     {-driver ""}
 } {
     Returns the protocol and port for the specified driver.
@@ -2505,7 +2524,6 @@ ad_proc -public util_driver_info {
     @param driver the driver to query (defaults to [ad_conn driver])
     @param array the array to populate with proto and port
 } {
-    upvar $array result
 
     if {$driver eq ""} {
         set driver [ad_conn driver]
@@ -2513,40 +2531,137 @@ ad_proc -public util_driver_info {
 
     set section [ns_driversection -driver $driver]
 
-    switch $driver {
-        nsudp -
-        nssock {
-            set result(proto) http
-            set result(port) [ns_config -int $section Port]
+    switch -glob -- $driver {
+        nsudp* -
+        nssock* {
+            set d [list proto http port [ns_config -int $section Port]] 
         }
         nsunix {
-            set result(proto) http
-            set result(port) {}
+            set d [list proto http port ""]
         }
-        nsssl - nsssle {
-            set result(port) [ns_config -int $section Port]
-            set result(proto) https
+        nsssl* - nsssle {
+            set d [list proto https port [ns_config -int $section Port]]
         }
         nsopenssl {
-            set result(port) [ns_config -int $section ServerPort]
-            set result(proto) https
+            set d [list proto https port [ns_config -int $section ServerPort]]
         }
         default {
             ns_log Error "Unknown driver: [ad_conn driver]. Only know nssock, nsunix, nsssl, nsssle, nsopenssl"
-            set result(port) [ns_config -int $section Port]
-            set result(proto) http
+            set d [list proto http port [ns_config -int $section Port]]
         }
     }
+    lappend d hostname [ns_config $section hostname]
+    
+    if {[info exists array]} {
+        upvar $array result
+        array set result $d
+    }
+    return $d
+}
+
+ad_proc util::split_location {location protoVar hostnameVar portVar} {
+    Split the provided location into "protocol", "hostname" and
+    "port".  The results are returned to the provided output
+    variables.  The function supports IP-literal notation according to
+    RFC 3986 section 3.2.2.
+    
+    @author Gustaf Neumann
+    @return boolean value indicating success
+    @see util::split_location
+} {
+    upvar $protoVar proto $hostnameVar hostname $portVar port
+    
+    if {
+        [regexp {^([a-z]+://)?([^:]+)(:[0-9]*)?$} $location . proto hostname port]
+        || [regexp {^([a-z]+://)?(\[[^\]]+\])(:[0-9]*)?$} $location . proto hostname port]
+    } {
+        if {$proto ne ""} {
+            lassign [split $proto :] proto .
+        }
+        if {$port eq "" && $proto ne ""} {
+            set default_port(http) 80
+            set default_port(https) 443
+            set port $default_port($proto)
+        } else {
+            # In case there is no proto, the port is set to ""
+            set port [string range $port 1 end]
+        }
+        set success 1
+    } else {
+        set success 0
+    }
+    return $success 
+}
+
+ad_proc util::join_location {{-proto ""} {-hostname} {-port ""}} {
+    Join hostname and port and use IP-literal notation when necessary.
+    The function is the inverse function of  util::split_location.
+    @return location consisting of hostname and optionally port 
+    @author Gustaf Neumann
+    @see util::split_location
+} {
+    set result ""
+    if {$proto ne ""} {
+        append result $proto://
+    }
+    if {[string match *:* $hostname]} {
+        append result "\[$hostname\]"
+    } else {
+        append result $hostname
+    }
+    if {$port ne ""} {
+        append result :$port
+    }
+    return $result
+}
+
+ad_proc -public util::configured_location {} {
+
+    Return the configured location as configured for the current
+    network driver. While [util_current_location] honors the virtual
+    host information of the host header field,
+    util::configured_location returns the main configured location
+    (probably the main subsite). This also differs from [ad_url],
+    which returns always the same value from the kernel parameter,
+    since it returns either the https or http result.
+
+    @return the configured location in the form "proto://hostname?:port?"
+
+    @see ad_url
+    @see util_current_location
+} {
+    set driver_info [util_driver_info]
+    return [util::join_location \
+                -proto    [dict get $driver_info proto] \
+                -hostname [dict get $driver_info hostname] \
+                -port     [dict get $driver_info port]]
 }
 
 ad_proc -public util_current_location {} {
-    Like ad_conn location - Returns the location string of the current
-    request in the form protocol://hostname[:port] but it looks at the
-    "Host:" header, that is, takes into account the host name the client
-    used although it may be different from the host name from the server
-    configuration file.  If the Host header is missing or empty 
-    util_current_location falls back to ad_conn location.
+    
+    Like [ad_conn location] - Returns the location string of the
+    current request in the form protocol://hostname?:port? but it
+    looks at the "Host:" header field, that is, takes into account the
+    host name the client used although it may be different from the
+    host name from the server configuration file.  If the Host header
+    is missing or empty util_current_location falls back to ad_conn
+    location.
+
+    @return the configured location in the form "protocol://hostname?:port?"
+
+    @see util::configured_location
+    @see ad_url
+    @see ad_conn
 } {
+
+    #
+    # Compute util_current_location only once per request and cache
+    # the result per thread.
+    #
+    if {[info exists ::__util_current_location]} {
+        return $::__util_current_location
+    }
+    
     set default_port(http) 80
     set default_port(https) 443
     #
@@ -2563,14 +2678,7 @@ ad_proc -public util_current_location {} {
     # "hostname" and "port" will be the default and might be
     # overwritten by more specific information.
     #
-    if {[regexp {^([a-z]+://)?([^:]+)(:[0-9]*)?$} [ns_conn location] . proto hostname port]} {
-        if {$proto ne ""} {
-            lassign [split $proto :] proto .
-        }
-        if {$port eq ""} {
-            set port $default_port($proto)
-        }
-    } else {
+    if {![util::split_location [ns_conn location] proto hostname port]} {
         ns_log Error "util_current_location got invalid information from driver '[ns_conn location]'"
         # provide fallback info
         set hostname [ns_info hostname]
@@ -2611,23 +2719,29 @@ ad_proc -public util_current_location {} {
     # In case the "Host:" header field was provided, use the "hostame"
     # and maybe the "port" from there (this has the highest priority)
     #
-    set Host [ns_set iget $headers Host]
+    set Host [security::validated_host_header]
     if {$Host ne ""} {
-        lassign [split $Host ":"] Host_hostname Host_port
-        set hostname $Host_hostname
-        if {$Host_port ne ""} {
-            set port $Host_port
+        if {[util::split_location $Host .proto hostname Host_port]} {
+            if {$Host_port ne ""} {
+                set port $Host_port
+            }
         }
+    } else {
+        ns_log notice "ignore non-existing or untrusted host header, fall back to <$hostname>"
     }
     
     #
     # We have all information, return the data...
     #
     if {$suppress_port || $port eq $default_port($proto) || $port eq ""} {
-        return $proto://$hostname
+        set result ${proto}://${hostname}
     } else {
-        return "$proto://$hostname:$port"
+        set result ${proto}://${hostname}:${port}
     }
+
+    set ::__util_current_location $result
+    #ns_log notice "util_current_location returns <$result> based on hostname <$hostname>"
+    return $result
 }
 
 ad_proc -public util_current_directory {} {
@@ -2683,7 +2797,17 @@ ad_proc -public ad_get_tcl_call_stack {
 } {
     set stack ""
     for { set x [expr {[info level] + $level}] } { $x > 0 } { incr x -1 } {
-        append stack "    called from [info level $x]\n"
+        set info [info level $x]
+        regsub -all \n $info {\\n} info
+        if {[string length $info]>200} {
+            set arglist ""
+            foreach arg $info {
+                if {[string length $arg]>40} {set arg [string range $arg 0 40]...}
+                lappend arglist $arg
+            }
+            set info $arglist
+        }
+        append stack "    called from $info\n"
     }
     return $stack
 }
@@ -3247,30 +3371,6 @@ ad_proc -public max { args } {
         }
     }
     return $max
-}
-
-# usage: 
-#   suppose the variable is called "expiration_date"
-#   put "[ad_dateentrywidget expiration_date]" in your form
-#     and it will expand into lots of weird generated var names
-#   put ns_dbformvalue [ns_getform] expiration_date date expiration_date
-#     and whatever the user typed will be set in $expiration_date
-
-proc ad_dateentrywidget {column {default_date "1940-11-03"}} {
-    if {[ns_info name] ne "NaviServer"} {
-        ns_share NS
-    } else {
-        set NS(months) [list January February March April May June \
-                            July August September October November December]
-    }
-    set output "<select name=\"$column.month\">\n"
-    for {set i 0} {$i < 12} {incr i} {
-        append output "<option> [lindex $NS(months) $i]</option>\n"
-    }
-
-    append output "</select>&nbsp;<input name=\"$column.day\" type=\"text\" size=\"3\" maxlength=\"2\">&nbsp;<input name=\"$column.year\" type=\"text\" size=\"5\" maxlength=\"4\">"
-
-    return [ns_dbformvalueput $output $column date $default_date]
 }
 
 ad_proc -public util_ns_set_to_list {
@@ -4582,16 +4682,26 @@ ad_proc util::external_url_p { url } {
     HTTP or HTTPS port number added or removed from current host name    
     or another hostname that the host responds to (from host_node_map)
 } {
-    set locations_list [security::locations]
-    # there may be as many as 3 valid full urls from one hostname
     set external_url_p [util_complete_url_p $url]
-
-    # more valid url pairs with host_node_map
-    foreach location $locations_list {
-        set encoded_location [ns_urlencode $location]
-        #       ns_log Notice "util::external_url_p location \"$location/*\" url $url match [string match "${encoded_location}/*" $url]"
-        set external_url_p [expr { $external_url_p && ![string match "$location/*" $url] } ] 
-        set external_url_p [expr { $external_url_p && ![string match "${encoded_location}/*" $url] } ] 
+    #
+    # Only if the URL is syntactical a URL with a protocol, it might
+    # be external.
+    #
+    if {$external_url_p} {
+        #
+        # If it has a protocol, we have to be able to find it in security::locations
+        #
+        set locations_list [security::locations]
+        # more valid url pairs with host_node_map
+        
+        foreach location $locations_list {
+            set len [string length $location]
+            #ns_log notice "util::external_url_p location match <$location/*> with <$url> sub <[string range $url 0 $len-1]>"
+            if {[string range $url 0 $len-1] eq $location} {
+                set external_url_p 0
+                break
+            }
+        }
     }
     return $external_url_p
 }
@@ -4735,6 +4845,62 @@ ad_proc -public util::disk_cache_eval {
     return $result
 }
 
+ad_proc -public util::request_info {
+    {-with_headers:boolean false}
+} {
+    
+    Produce a string containing the detailed request information.
+    This is in particular useful for debugging, when errors are raised.
+    
+    @param with_headers Include request headers
+    @author Gustaf Neumann
+
+} {
+    set info ""
+    if {[ns_conn isconnected]} {
+        #
+        # Base information
+        #
+        append info "    " \
+            [ns_conn method] \
+            " [util_current_location][ns_conn url]?[ns_conn query]" \
+            " referred by '[get_referrer]' peer [ad_conn peeraddr] user_id [ad_conn user_id]"
+        
+        if {[ns_conn method] eq "POST"} {
+            # 
+            # POST data info
+            #
+            if {[ns_conn flags] & 1} {
+                append info "\n    connection already closed, cooked form-content:"
+                foreach {k v} [ns_set array [ns_getform]] {
+                    if {[string length $v] > 100} {
+                        set v "[string range $v 0 100]..."
+                    }
+                    append info "\n        $k:\t$v"
+                }
+            } else {
+                set data [ns_conn content]
+                if {[string length $data] < 2000} {
+                    append info "\n        post-data: $data"
+                }
+            }
+        }
+
+        #
+        # Optional header info
+        #
+        if {$with_headers_p} {
+            append info \n
+            foreach {k v} [ns_set array [ns_conn headers]] {
+                append info "\n $k:\t$v"
+            }
+        }
+    }
+    return $info
+}
+
+
+
 ad_proc -public ad_log {
     level
     message
@@ -4747,15 +4913,11 @@ ad_proc -public ad_log {
 
     @author Gustaf Neumann
 } {
-    set prefix ""
-    if {[ns_conn isconnected]} {
-        set headers [ns_conn headers]
-        append prefix \
-            [ns_conn method] \
-            " http://[ns_set iget $headers host][ns_conn url]?[ns_conn query]" \
-            " referred by '[get_referrer]'\n"
-    }
-    ns_log $level "${prefix}${message}\n[uplevel ad_get_tcl_call_stack]"
+    set with_headers [expr {$level in {error Error}}]
+    append request "    " \
+        [util::request_info -with_headers=$with_headers]
+    
+    ns_log $level "${message}\n[uplevel ad_get_tcl_call_stack]${request}\n"
 }
 
 # Local variables:

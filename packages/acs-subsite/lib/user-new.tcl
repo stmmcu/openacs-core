@@ -10,7 +10,6 @@
 #                   Will add an element to the form where the user can pick a relation among the permissible 
 #                   rel-types for the group.
 
-
 # Check if user can self register
 auth::self_registration
 
@@ -60,7 +59,7 @@ ad_form -name register -export {next_url user_id return_url} -form [auth::get_re
     }
 }
 
-if { ([info exists rel_group_id] && $rel_group_id ne "") } {
+if { [info exists rel_group_id] && $rel_group_id ne "" } {
     ad_form -extend -name register -form {
         {rel_group_id:integer(hidden),optional}
     }
@@ -168,7 +167,7 @@ ad_form -extend -name register -on_request {
     
     
     # User is registered and logged in
-    if { (![info exists return_url] || $return_url eq "") } {
+    if { ![info exists return_url] || $return_url eq "" } {
         # Redirect to subsite home page.
         set return_url [subsite::get_element -element url]
     }

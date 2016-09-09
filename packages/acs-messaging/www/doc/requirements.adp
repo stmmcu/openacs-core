@@ -7,7 +7,7 @@
 by <a href="mailto:akk\@arsdigita.com">Anukul Kapoor</a>
  and
 <a href="mailto:akk\@arsdigita.com">Pete Su</a>
-<i>This is only a DRAFT</i>
+<em>This is only a DRAFT</em>
 <h3>I. Introduction</h3>
 <p>In ACS 3.x, each messaging application (e.g. bboard, general
 comments, spam, ticket tracker and so on) used its own specialized
@@ -46,9 +46,9 @@ search.</li>
 <h3>IV. Use-cases and User Scenarios</h3>
 <p>ACS Messaging is generally not used directly by users, so there
 are no user interface level scenarios to consider at this point.
-It's possible that in the future we will want to extend the system
-with generic administrative user interfaces, but this is not clear
-right now.</p>
+It&#39;s possible that in the future we will want to extend the
+system with generic administrative user interfaces, but this is not
+clear right now.</p>
 <p>We scenarios that we should consider are the kinds of
 applications that we mean to support with this package, and what
 the developers of those applications would like to see in the data
@@ -59,8 +59,8 @@ implemented using this package:</p>
 <li>BBoard</li><li>Webmail</li><li>General Comments</li><li>Spam</li><li>Various parts of the ticket tracker.</li>
 </ul>
 <p>Each of these applications requires a message store and each
-defines it's own high level organization for messages whithin that
-store.</p>
+defines it&#39;s own high level organization for messages whithin
+that store.</p>
 <ul>
 <li>Bboard organizes messages into forums and categories and
 threads. It also allows users to send and reply to messages via
@@ -130,9 +130,9 @@ types, although initial implementations may be more limited.</p>
 <p><strong>100.0 Messages and E-Mail</strong></p>
 <p>The system should provide the following interfaces for
 integrating with existing E-mail systems. Note that these
-requirements only deal with <i>sending</i> mail. Our feeling that a
-seperate package should be implemented to deal with
-<i>receiving</i> mail that would use ACS Messages for storage of
+requirements only deal with <em>sending</em> mail. Our feeling that
+a seperate package should be implemented to deal with
+<em>receiving</em> mail that would use ACS Messages for storage of
 incoming messages.</p>
 <blockquote>
 <p><strong>100.10 Sending Single Messages</strong></p><p>The system should provide a mechanism for specifying that a

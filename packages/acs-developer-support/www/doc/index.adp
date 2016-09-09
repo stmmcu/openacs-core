@@ -17,16 +17,16 @@ in:
 <h2>The Big Picture</h2>
 <p>Software development is a big feedback loop: a developer writes
 something, tests it, and then repeats until the results are
-satisfactory. It's important to streamline this cycle by having a
-development environment which makes it easy to analyze what the
+satisfactory. It&#39;s important to streamline this cycle by having
+a development environment which makes it easy to analyze what the
 software is doing under the hood.</p>
 <h2>Peeking Under the Hood</h2>
 <p>Our development environment previously consisted largely of
-Emacs, and <tt>tail -f
-/web/servername/log/servername-error.log</tt>. Now this has been
-augmented: <tt>ad_footer</tt> and <tt>ad_admin_footer</tt> now
-display a link entitled <i>Developer Information</i>. (You can use
-the <tt>ds_link</tt> procedure to generate the link yourself.)
+Emacs, and <kbd>tail -f
+/web/servername/log/servername-error.log</kbd>. Now this has been
+augmented: <kbd>ad_footer</kbd> and <kbd>ad_admin_footer</kbd> now
+display a link entitled <em>Developer Information</em>. (You can
+use the <kbd>ds_link</kbd> procedure to generate the link yourself.)
 Following the link displays a screenful of information
 including:</p>
 <ul>
@@ -45,17 +45,17 @@ in as a site-wide administrator! Revealing this information to
 anyone else would pose a huge security risk.</p>
 <h2>Comments</h2>
 
-Tired of using <tt>ns_log</tt>
+Tired of using <kbd>ns_log</kbd>
  to instrument your code, then
-grokking the error log to see what's wrong with your page? Use the
-<tt>ds_comment</tt>
+grokking the error log to see what&#39;s wrong with your page? Use
+the <kbd>ds_comment</kbd>
  routine instead:
 <blockquote><pre>
 ds_comment "Foo is $foo"
 </pre></blockquote>
 
 Your comment will show up at the bottom of the page, beneath the
-<i>Developer Information</i>
+<em>Developer Information</em>
  link (but only for site-wide
 administrators). It will also be displayed on the Developer
 Information page itself.
@@ -68,8 +68,8 @@ systems - they probably incur a performance hit.</p>
 <h2>How It Works</h2>
 <p>The security subsystem registers preauth and trace filters which
 store relevant connection information in shared variables
-(<tt>nsv</tt>s). The security subsystem also renames the AOLserver
-<tt>ns_db</tt> procedure and registers a wrapper which aggregates
+(<kbd>nsv</kbd>s). The security subsystem also renames the AOLserver
+<kbd>ns_db</kbd> procedure and registers a wrapper which aggregates
 information about database queries.</p>
 <p>
 <a href="developer-support-example">Example</a> output of ACS

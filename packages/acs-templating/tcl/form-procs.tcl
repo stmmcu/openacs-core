@@ -171,10 +171,8 @@ ad_proc -public template::form::create { id args } {
     regsub -all {\r} $opts(elements) {} element_data
 
     foreach element [split $element_data "\n"] {
-
       set element [string trim $element]
       if {$element eq {}} { continue }
-
       template::element create $id {*}$element
     }
   }
@@ -419,7 +417,7 @@ ad_proc -public template::form::section {
 
     # legend can't be empty
     if { $section ne "" && $legendtext eq "" } {
-        ns_log Warning "template::form::section (form: $id, section: $section): The section legend is empty. You must provide text for the legend otherwise the section fieldset won't be created."
+        ad_log Warning "template::form::section (form: $id, section: $section): The legend-text of this section is empty. You must provide text for the legend-text otherwise the section fieldset won't be created."
         return
     }
 
@@ -556,7 +554,7 @@ ad_proc -private template::form::render { id tag_attributes } {
       # Submitting invalid data to hidden elements is a common attack vector.  
       # This does not give them much information in the response.
       ad_return_complaint 1 "Your request is invalid."
-      ns_log Warning "Validation error in hidden form element.\
+      ad_log Warning "Validation error in hidden form element.\
 	This may be part of a vulnerability scan or attack reconnaissance: \
 	'[set $id:error($element(id))]' on element '$element(id)'."
       ad_script_abort
@@ -659,7 +657,7 @@ ad_proc -private template::form::check_elements { id } {
 
       } else {
 
-        ns_log Warning "template::form::check_elements: MISSING FORMWIDGET: $id\:$element_ref"
+        ad_log Warning "template::form::check_elements: MISSING FORMWIDGET: $id\:$element_ref"
         # Throw an error ?
       }
     }

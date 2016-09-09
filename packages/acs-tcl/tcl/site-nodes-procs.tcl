@@ -1453,7 +1453,7 @@ if {$UseXotclSiteNodes} {
             }
 
             :public method get_node_id {-url:required} {
-                ns_cache_eval xo_site_nodes id-$url { next }
+                return [ns_cache_eval xo_site_nodes id-$url { next }]
             }
 
             :protected method properties {-node_id:required} {
@@ -1531,7 +1531,7 @@ if {$UseXotclSiteNodes} {
 
         # Turn on caching by registering the mixin (backward compatibility
         # for early XOTcl2-versions, probably not needed anymore).
-        if {"2.0.0" in [package versions nsf]} {
+        if {[package require nsf] >= "2.0.0"} {
             site_node object mixins add SiteNodeCache
         } else {
             site_node object mixin add SiteNodeCache
